@@ -1,0 +1,14 @@
+table.table.table-striped
+    caption Health Kiosk Status
+    thead
+        tr
+            th Status
+            th Name
+            th Last Updated
+            th Record
+    tbody(ng-repeat="hk in rasps")
+        tr
+        td {{hk.status}}
+        td {{hk.name}}
+        td {{hk.lastUpdatedString}}
+        td 1

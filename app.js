@@ -78,6 +78,15 @@ app.get('/machines', function(req,res){
         rasps: rasps
     });
 });
+app.get('/startRecording', function(req,res){
+    console.log(req.query.machinename);
+    client.publish('hk/machines/'+req.query.machinename, '{"username":"demouser","bp":"Y","pulse":"Y"}', function() {
+        res.json({
+            status:"done"
+        });
+        client.subscribe('hk/machines/results');
+    });
+});
 // JSON API
 //app.get('/api/name', api.name);
 
@@ -100,41 +109,43 @@ require('./sockets/base')(io);
 io.set('log level', 1000);
 var rasps=[],found=false;
 client.on('connect', function () { // When connected
-
-    // subscribe to a topic
-    client.subscribe('hello/world', function () {
-        // when a message arrives, do something with it
-        client.on('message', function (topic, message, packet) {
-            //onerasp=JSON.stringify(message);
-            var currentDate = new Date();
-            found=false;
-            for(var i in rasps){
-                if(rasps[i].name==message){
-                    rasps[i].lastUpdated=currentDate;
-                    rasps[i].lastUpdatedString=currentDate.getHours()+":"+currentDate.getMinutes();
-                    found=true;
-                    break;
+  client.subscribe('hk/machines');
+  client.on('message', function (topic, message, packet) {
+        switch (topic){
+            case "hk/machines":
+                var currentDate = new Date();
+                found=false;
+                for(var i in rasps){
+                    if(rasps[i].name==message){
+                        rasps[i].lastUpdated=currentDate;
+                        rasps[i].lastUpdatedString=currentDate.getHours()+":"+currentDate.getMinutes();
+                        found=true;
+                        break;
+                    }
                 }
-            }
-            if(!found){
-                rasps.push({
-                    name:message,
-                    lastUpdated:currentDate,
-                    lastUpdatedString:currentDate.getHours()+":"+currentDate.getMinutes()
+                if(!found){
+                    rasps.push({
+                        name:message,
+                        lastUpdated:currentDate,
+                        lastUpdatedString:currentDate.getHours()+":"+currentDate.getMinutes()
+                    });
+                }
+                for(var i in rasps){
+                    if(currentDate-rasps[i].lastUpdated>120000)
+                        rasps[i].status="Down";
+                    else
+                        rasps[i].status="Up";
+                }
+                io.sockets.emit('broadcast', {
+                    payload: rasps
                 });
-            }
-            for(var i in rasps){
-                if(currentDate-rasps[i].lastUpdated>120000)
-                    rasps[i].status="Down";
-                else
-                    rasps[i].status="Up";
-            }
-            io.sockets.emit('broadcast', {
-                payload: rasps
-            });
-            console.log("Received '" + message + "' on '" + topic + "'");
-        });
-    });
+                break;
+            default :
+                io.sockets.emit('broadcast', {
+                    payload: JSON.parse(message)
+                });
+        }
+  });
 });
 
 

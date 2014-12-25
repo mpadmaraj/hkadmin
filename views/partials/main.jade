@@ -11,4 +11,5 @@ table.table.table-striped
         td {{hk.status}}
         td {{hk.name}}
         td {{hk.lastUpdatedString}}
-        td 1
+        td
+            button(ng-click="movetoRecordScreen(hk.name,hk.status)") Record for demouser

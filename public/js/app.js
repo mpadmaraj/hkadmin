@@ -13,14 +13,19 @@ angular.module('myApp', ['ngRoute',
   'btford.socket-io'
 ]).
 config(function ($routeProvider, $locationProvider) {
+  //    $locationProvider.hashPrefix("#");
   $routeProvider.
     when('/', {
-      templateUrl: 'partials/main',
-      controller: 'MainCtrl'
-    }).
+        templateUrl: 'partials/main',
+        controller: 'MainCtrl'
+      }).
+      when('/record', {
+        templateUrl: 'partials/record',
+        controller: 'RecordCtrl'
+      }).
     otherwise({
       redirectTo: '/'
     });
 
-  $locationProvider.html5Mode(true);
+  //$locationProvider.html5Mode(true);
 });

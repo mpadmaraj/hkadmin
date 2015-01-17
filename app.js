@@ -148,12 +148,6 @@ client.on('connect', function () { // When connected
   });
 });
 
-
-client.publish('hk/machines/rasp1', 'rasp1', function() {
-    console.log("Message is published");
-    //  client.end(); // Close the connection when published
-});
-
 mongoose.connect("mongodb://paddy:123456@ds049997.mongolab.com:49997/arduino");
 
 module.exports = app;

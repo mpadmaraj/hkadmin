@@ -87,6 +87,21 @@ app.get('/startRecording', function(req,res){
         client.subscribe('hk/machines/results');
     });
 });
+
+app.get('/startRecordingForUser', function(req,res){
+
+    var measure ={};
+    measure.bp=req.query.bp=='Y'?'Y':'N';
+    measure.pulse=req.query.pulse=='Y'?'Y':'N';
+    measure.spo2=req.query.spo2=='Y'?'Y':'N';
+    measure.username=req.query.user;
+    client.publish('hk/machines/'+req.query.machinename, JSON.stringify(measure), function() {
+        res.json({
+            status:"done"
+        });
+        client.subscribe('hk/machines/results');
+    });
+});
 // JSON API
 //app.get('/api/name', api.name);
 

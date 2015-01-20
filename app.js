@@ -78,13 +78,14 @@ app.get('/machines', function(req,res){
         rasps: rasps
     });
 });
+client.subscribe('hk/machines/results');
 app.get('/startRecording', function(req,res){
     console.log(req.query.machinename);
     client.publish('hk/machines/'+req.query.machinename, '{"username":"demouser","bp":"Y","pulse":"Y"}', function() {
         res.json({
             status:"done"
         });
-        client.subscribe('hk/machines/results');
+        /*client.subscribe('hk/machines/results');*/
     });
 });
 
@@ -99,9 +100,44 @@ app.get('/startRecordingForUser', function(req,res){
         res.json({
             status:"done"
         });
-        client.subscribe('hk/machines/results');
+
+/*
+        setTimeout(function(){
+            var meas = {};
+            meas.pulse={};
+            meas.pulse.reading=70;
+            meas.pulse.color="green";
+            meas.bp={};
+            meas.bp.systolic=130;
+            meas.bp.diastolic=85;
+            meas.bp.color="green";
+            meas.spo2={};
+            meas.spo2.reading=98;
+            meas.spo2.color="red";
+            meas.comments="<span>Hi</span><br><span>How are you?</span>"
+            meas.machine='rasp1';
+            meas.username=req.query.user;
+            io.sockets.emit('broadcast', {
+                payload: meas
+            });
+        }, 2000);
+*/
     });
 });
+
+app.get('/getUserRecording', function(req,res){
+    console.log(req.query.user);
+    Patient
+        .find({userid: req.query.user})
+        .sort({'date': -1})
+        .limit(10)
+        .exec(function(err, records) {
+            if (err) return console.error(err);
+            res.json(records);
+        });
+
+});
+
 // JSON API
 //app.get('/api/name', api.name);
 
@@ -156,13 +192,41 @@ client.on('connect', function () { // When connected
                 });
                 break;
             default :
-                io.sockets.emit('broadcast', {
-                    payload: JSON.parse(message)
+                var patientRecord = new Patient({
+                    pulse:message.pulse,
+                    bp:{
+                        systolic:message.systolic,
+                        diastolic:message.diastolic
+                    },
+                    spo2:message.spo2,
+                    userid:req.query.user
                 });
+                patientRecord.save(function(err, patientRecord){
+                    if (err) return console.error(err);
+                    //console.log(patientRecord);
+                    io.sockets.emit('broadcast', {
+                        payload: JSON.parse(message)
+                    });
+                });
+
         }
   });
 });
 
 mongoose.connect("mongodb://paddy:123456@ds049997.mongolab.com:49997/arduino");
+var hkSchema = new mongoose.Schema({
+    pulse: Number
+    ,
+    bp: {
+        systolic: Number,
+        diastolic: Number
+    }
+    ,
+    spo2: Number,
+    userid:String,
+    date:{ type: Date, default: Date.now }
+});
+
+var Patient = mongoose.model('Patient', hkSchema);
 
 module.exports = app;
